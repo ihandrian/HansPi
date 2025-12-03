@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HansPi Control Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: white;
+        }
+
+        /* Fullscreen video container as background */
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .video-container.rotated img {
+            transform: rotate(180deg);
+        }
+
+        /* System info panel at top */
+        .system-info {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-item {
+            text-align: center;
+            margin: 0 10px;
+        }
+
+        .info-item h3 {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-item div {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Joystick container - centered at bottom middle */
+        .joystick-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #joystick-area {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #joystick-base {
+            width: 120px;
+            height: 120px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #joystick-thumb {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.2s;
+        }
+
+        #joystick-thumb:active {
+            background-color: rgba(76, 175, 80, 0.9);
+        }
+
+        .joystick-status {
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 10px;
+        }
+
+        /* Burger button */
+        .burger-button {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            z-index: 15;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s;
+        }
+        
+        .burger-button.hidden {
+            display: none;
+        }
+        
+        .burger-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        .burger-button i {
+            font-size: 24px;
+            color: white;
+        }
+        
+        /* Camera and speed controls */
+        .controls-panel {
+            position: relative;
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            min-width: 200px;
+        }
+        
+        .controls-panel.hidden {
+            display: none !important;
+        }
+        
+        .controls-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: move;
+            user-select: none;
+        }
+        
+        .controls-panel-header:active {
+            cursor: grabbing;
+        }
+        
+        .controls-panel-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-button:hover {
+            color: #f44336;
+        }
+        
+        .controls-wrapper {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            z-index: 10;
+            user-select: none;
+            transform: translate(0, 0);
+        }
+
+        .controls-panel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 5px;
+            color: white;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            height: 6px;
+            border-radius: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toggle-switch input[type="checkbox"] {
+            height: 0;
+            width: 0;
+            visibility: hidden;
+            position: absolute;
+        }
+
+        .toggle-switch label {
+            cursor: pointer;
+            text-indent: -9999px;
+            width: 50px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            display: block;
+            border-radius: 25px;
+            position: relative;
+        }
+
+        .toggle-switch label:after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + label {
+            background: #4caf50;
+        }
+
+        .toggle-switch input:checked + label:after {
+            left: calc(100% - 2px);
+            transform: translateX(-100%);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        #model-select {
+            width: 100%;
+            max-width: 150px;
+        }
+        
+        #model-select option {
+            background-color: #333;
+            color: white;
+        }
+        
+        .action-button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+        
+        .action-button:hover {
+            background-color: #45a049;
+        }
+        
+        .action-button.stop {
+            background-color: #f44336;
+        }
+        
+        .action-button.stop:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .joystick-container {
+                bottom: 20px;
+                padding: 15px;
+            }
+
+            .controls-panel {
+                bottom: 20px;
+                right: 10px;
+                padding: 10px;
+                min-width: 150px;
+            }
+
+            .system-info {
+                padding: 5px;
+            }
+
+            .info-item h3 {
+                font-size: 12px;
+            }
+
+            .info-item div {
+                font-size: 14px;
+            }
+
+            #joystick-area {
+                width: 120px;
+                height: 120px;
+            }
+
+            #joystick-base {
+                width: 100px;
+                height: 100px;
+            }
+
+            #joystick-thumb {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- System Information Panel at Top -->
+    <div class="system-info">
+        <div class="info-item">
+            <h3>CPU</h3>
+            <div id="cpu-usage">0%</div>
+        </div>
+        <div class="info-item">
+            <h3>MEMORY</h3>
+            <div id="memory-usage">0%</div>
+        </div>
+        <div class="info-item">
+            <h3>TEMP</h3>
+            <div id="temperature">0°C</div>
+        </div>
+        <div class="info-item">
+            <h3>BATTERY</h3>
+            <div id="battery">N/A</div>
+        </div>
+        <div class="info-item">
+            <h3>MODEL</h3>
+            <select id="model-select" onchange="switchModel()" style="background-color: rgba(255, 255, 255, 0.2); border: none; border-radius: 5px; color: white; padding: 5px; font-size: 14px; font-weight: bold; cursor: pointer;">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="info-item">
+            <h3>TPU</h3>
+            <div id="tpi-info">Detecting...</div>
+        </div>
+    </div>
+    
+    <!-- Fullscreen Video Feed as Background -->
+    <div class="video-container" id="video-container">
+        <img src="/video_feed" alt="Video Feed">
+    </div>
+    
+    <!-- Joystick Control - Centered at Bottom Middle -->
+    <div class="joystick-container">
+        <div id="joystick-area">
+            <div id="joystick-base">
+                <div id="joystick-thumb"></div>
+            </div>
+        </div>
+        <div class="joystick-status">
+            <div>Direction: <span id="joystick-direction">center</span></div>
+            <div>Power: <span id="joystick-power">0%</span></div>
+        </div>
+    </div>
+    
+    <!-- Burger Button -->
+    <div class="burger-button hidden" id="burger-button" onclick="toggleSettings()">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <!-- Camera and Speed Controls - Right Bottom -->
+    <div class="controls-wrapper" id="controls-wrapper">
+        <div class="controls-panel" id="controls-panel">
+            <div class="controls-panel-header" id="panel-header">
+                <h3>Settings</h3>
+                <button class="close-button" onclick="toggleSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="setting-item">
+            <label for="camera-select">Camera:</label>
+            <select id="camera-select" onchange="switchCamera()">
+                {% for camera in cameras %}
+                <option value="{{ camera }}" {% if camera == selected_camera %}selected{% endif %}>Camera {{ camera }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="setting-item toggle-switch">
+            <span>Rotate Camera:</span>
+            <input type="checkbox" id="rotate-view" onchange="toggleRotation()">
+            <label for="rotate-view">Toggle</label>
+        </div>
+        
+        <div class="setting-item">
+            <label for="speed">Speed: <span id="speed-label">50%</span></label>
+            <input type="range" id="speed" min="0" max="1" step="0.1" value="0.5" oninput="updateSpeedLabel(this.value)">
+        </div>
+        
+        <div class="setting-item toggle-switch">
+            <span>Person Detection:</span>
+            <input type="checkbox" id="detection-toggle" onchange="toggleDetection()">
+            <label for="detection-toggle">Toggle</label>
+        </div>
+        
+        <div class="setting-item" id="follow-controls" style="display: none;">
+            <button id="follow-button" class="action-button" onclick="toggleFollow()">Start Following</button>
+            
+            <div class="setting-item" style="margin-top: 10px;">
+                <label for="follow-speed">Follow Speed: <span id="follow-speed-label">50%</span></label>
+                <input type="range" id="follow-speed" min="0.1" max="1" step="0.1" value="0.5" oninput="updateFollowSpeed(this.value)">
+            </div>
+        </div>
+        
+        <div class="status" id="status-message">Ready</div>
+    </div>
+    
+    <script>
+        // Global variables for joystick
+        let joystickActive = false;
+        let joystickBaseElement = null;
+        let joystickThumbElement = null;
+        let joystickBaseRect = null;
+        let joystickBaseX = 0;
+        let joystickBaseY = 0;
+        let joystickLimitRadius = 0;
+        let currentDirection = "center";
+        let currentPower = 0;
+        let joystickInterval = null;
+        
+        // Initialize joystick
+        function initJoystick() {
+            joystickBaseElement = document.getElementById("joystick-base");
+            joystickThumbElement = document.getElementById("joystick-thumb");
+            
+            // Get joystick dimensions
+            joystickBaseRect = joystickBaseElement.getBoundingClientRect();
+            joystickBaseX = joystickBaseRect.width / 2;
+            joystickBaseY = joystickBaseRect.height / 2;
+            joystickLimitRadius = joystickBaseRect.width / 2 * 0.8; // 80% of radius
+            
+            // Center the thumb initially
+            centerJoystickThumb();
+            
+            // Add event listeners for mouse/touch
+            joystickBaseElement.addEventListener("mousedown", startJoystick);
+            document.addEventListener("mousemove", moveJoystick);
+            document.addEventListener("mouseup", endJoystick);
+            
+            // Touch events
+            joystickBaseElement.addEventListener("touchstart", function(e) {
+                e.preventDefault();
+                startJoystick(e.touches[0]);
+            });
+            document.addEventListener("touchmove", function(e) {
+                e.preventDefault();
+                if (joystickActive) {
+                    moveJoystick(e.touches[0]);
+                }
+            });
+            document.addEventListener("touchend", endJoystick);
+        }
+
+        // Center the joystick thumb
+        function centerJoystickThumb() {
+            joystickThumbElement.style.left = "50%";
+            joystickThumbElement.style.top = "50%";
+            joystickThumbElement.style.transform = "translate(-50%, -50%)";
+        }
+
+        // Start joystick control
+        function startJoystick(e) {
+            joystickActive = true;
+            
+            // Get joystick base dimensions
+            joystickBaseRect = joystickBaseElement.getBoundingClientRect();
+            joystickBaseX = joystickBaseRect.width / 2;
+            joystickBaseY = joystickBaseRect.height / 2;
+            joystickLimitRadius = joystickBaseRect.width / 2 * 0.8;
+            
+            // Move joystick thumb to pointer position
+            moveJoystick(e);
+            
+            // Start sending commands at regular intervals
+            if (joystickInterval === null) {
+                joystickInterval = setInterval(sendJoystickCommand, 100);
+            }
+        }
+        
+        // Move joystick thumb
+        function moveJoystick(e) {
+            if (!joystickActive) return;
+            
+            // Calculate position relative to joystick base center
+            const rect = joystickBaseElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Calculate distance from center
+            const deltaX = x - joystickBaseX;
+            const deltaY = y - joystickBaseY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // Limit distance to joystick radius
+            let limitedX, limitedY;
+            if (distance > joystickLimitRadius) {
+                const angle = Math.atan2(deltaY, deltaX);
+                limitedX = joystickBaseX + joystickLimitRadius * Math.cos(angle);
+                limitedY = joystickBaseY + joystickLimitRadius * Math.sin(angle);
+            } else {
+                limitedX = x;
+                limitedY = y;
+            }
+            
+            // Move joystick thumb using percentages
+            const percentX = (limitedX / joystickBaseRect.width) * 100;
+            const percentY = (limitedY / joystickBaseRect.height) * 100;
+            joystickThumbElement.style.left = percentX + "%";
+            joystickThumbElement.style.top = percentY + "%";
+            joystickThumbElement.style.transform = "translate(-50%, -50%)";
+            
+            // Calculate normalized position (-1 to 1)
+            const normalizedX = (limitedX - joystickBaseX) / joystickLimitRadius;
+            const normalizedY = (limitedY - joystickBaseY) / joystickLimitRadius;
+            
+            // Determine direction and power
+            determineDirection(normalizedX, normalizedY);
+        }
+        
+        // End joystick control
+        function endJoystick() {
+            if (!joystickActive) return;
+            
+            joystickActive = false;
+            
+            // Reset joystick thumb position
+            centerJoystickThumb();
+            
+            // Stop sending commands
+            if (joystickInterval !== null) {
+                clearInterval(joystickInterval);
+                joystickInterval = null;
+            }
+            
+            // Send stop command
+            sendCommand("stop");
+            
+            // Reset direction and power
+            currentDirection = "center";
+            currentPower = 0;
+            updateJoystickStatus();
+        }
+        
+        // Determine direction and power from joystick position
+        function determineDirection(x, y) {
+            // Calculate power (0 to 1)
+            const distance = Math.sqrt(x * x + y * y);
+            currentPower = Math.min(distance, 1.0);
+            
+            // Determine direction based on angle
+            const angle = Math.atan2(y, x) * 180 / Math.PI;
+            
+            if (currentPower < 0.2) {
+                currentDirection = "center";
+            } else if (angle > -45 && angle < 45) {
+                currentDirection = "right";
+            } else if (angle >= 45 && angle < 135) {
+                currentDirection = "backward";
+            } else if (angle >= -135 && angle < -45) {
+                currentDirection = "forward";
+            } else {
+                currentDirection = "left";
+            }
+            
+            updateJoystickStatus();
+        }
+        
+        // Update joystick status display
+        function updateJoystickStatus() {
+            document.getElementById("joystick-direction").innerText = currentDirection;
+            document.getElementById("joystick-power").innerText = Math.round(currentPower * 100) + "%";
+        }
+        
+        // Send joystick command
+        function sendJoystickCommand() {
+            if (currentDirection !== "center" && currentPower > 0.2) {
+                const speed = document.getElementById("speed").value * currentPower;
+                sendCommand(currentDirection, speed);
+            }
+        }
+        
+        // Update speed label
+        function updateSpeedLabel(value) {
+            const percentage = Math.round(value * 100);
+            document.getElementById("speed-label").innerText = `${percentage}%`;
+        }
+
+        // Send command to control robot
+        function sendCommand(action, customSpeed = null) {
+            const speed = customSpeed !== null ? customSpeed : document.getElementById("speed").value;
+            const camera_id = document.getElementById("camera-select").value;
+
+            // Send AJAX request
+            fetch('/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${action}&speed=${speed}&camera_id=${camera_id}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("status-message").innerText = `Command: ${action} | Speed: ${Math.round(speed * 100)}%`;
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to send command.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+
+        // Switch camera
+        function switchCamera() {
+            sendCommand('stop'); // Stop motors when switching cameras
+            
+            // Force reload of video feed
+            const videoFeed = document.querySelector("#video-container img");
+            const src = videoFeed.src;
+            videoFeed.src = "";
+            setTimeout(() => {
+                videoFeed.src = src + "?t=" + new Date().getTime();
+            }, 500);
+        }
+
+        // Toggle camera rotation
+        function toggleRotation() {
+            const videoContainer = document.getElementById("video-container");
+            const isChecked = document.getElementById("rotate-view").checked;
+
+            if (isChecked) {
+                videoContainer.classList.add("rotated");
+            } else {
+                videoContainer.classList.remove("rotated");
+            }
+        }
+        
+        // Toggle person detection
+        function toggleDetection() {
+            const isChecked = document.getElementById("detection-toggle").checked;
+            const followControls = document.getElementById("follow-controls");
+            
+            fetch('/detection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${isChecked ? 'enable' : 'disable'}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("status-message").innerText = 
+                        `Person detection ${data.enabled ? 'enabled' : 'disabled'}`;
+                    
+                    // Show/hide follow controls
+                    followControls.style.display = data.enabled ? 'block' : 'none';
+                    
+                    // If detection is disabled, ensure following is stopped
+                    if (!data.enabled && document.getElementById("follow-button").innerText === "Stop Following") {
+                        toggleFollow();
+                    }
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to toggle detection.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+        
+        // Toggle person following
+        function toggleFollow() {
+            const followButton = document.getElementById("follow-button");
+            const isFollowing = followButton.innerText === "Stop Following";
+            const action = isFollowing ? 'stop' : 'start';
+            
+            fetch('/follow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=${action}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    const newState = action === 'start' ? true : false;
+                    followButton.innerText = newState ? "Stop Following" : "Start Following";
+                    followButton.className = newState ? "action-button stop" : "action-button";
+                    
+                    document.getElementById("status-message").innerText = 
+                        `Person following ${newState ? 'started' : 'stopped'}`;
+                } else {
+                    document.getElementById("status-message").innerText = "Failed to toggle following.";
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error connecting to server.";
+                console.error("Error:", error);
+            });
+        }
+        
+        // Update follow speed label
+        function updateFollowSpeed(value) {
+            const percentage = Math.round(value * 100);
+            document.getElementById("follow-speed-label").innerText = `${percentage}%`;
+            
+            // If following is active, update the speed
+            if (document.getElementById("follow-button").innerText === "Stop Following") {
+                fetch('/follow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=speed&speed=${value}`
+                });
+            }
+        }
+        
+        // Load available models
+        async function loadAvailableModels() {
+            try {
+                const response = await fetch('/available_models');
+                if (response.ok) {
+                    const data = await response.json();
+                    const modelSelect = document.getElementById("model-select");
+                    modelSelect.innerHTML = '';
+                    
+                    if (data.models && data.models.length > 0) {
+                        data.models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.value;
+                            option.textContent = model.name;
+                            if (model.value === data.current) {
+                                option.selected = true;
+                            }
+                            modelSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'None';
+                        modelSelect.appendChild(option);
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading available models:", error);
+            }
+        }
+        
+        // Switch detection model
+        function switchModel() {
+            const modelSelect = document.getElementById("model-select");
+            const modelType = modelSelect.value;
+            
+            if (!modelType) return;
+            
+            fetch('/set_model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `model_type=${modelType}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    document.getElementById("status-message").innerText = 
+                        `Model switched to: ${modelSelect.options[modelSelect.selectedIndex].text}`;
+                } else {
+                    document.getElementById("status-message").innerText = 
+                        `Failed to switch model: ${data.message || 'Unknown error'}`;
+                    // Reload models to reset dropdown
+                    loadAvailableModels();
+                }
+            })
+            .catch(error => {
+                document.getElementById("status-message").innerText = "Error switching model.";
+                console.error("Error:", error);
+                loadAvailableModels();
+            });
+        }
+        
+        // Toggle settings panel
+        function toggleSettings() {
+            const panel = document.getElementById("controls-panel");
+            const burger = document.getElementById("burger-button");
+            
+            if (panel.classList.contains("hidden")) {
+                panel.classList.remove("hidden");
+                burger.classList.add("hidden");
+            } else {
+                panel.classList.add("hidden");
+                burger.classList.remove("hidden");
+            }
+        }
+        
+        // Make settings panel draggable
+        function makeDraggable() {
+            const panel = document.getElementById("controls-panel");
+            const header = document.getElementById("panel-header");
+            const wrapper = document.getElementById("controls-wrapper");
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            header.addEventListener('mousedown', dragStart);
+            header.addEventListener('touchstart', dragStart, { passive: false });
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchend', dragEnd);
+            
+            function dragStart(e) {
+                // Don't start dragging if clicking the close button
+                if (e.target.closest('.close-button')) {
+                    return;
+                }
+                
+                isDragging = true;
+                const rect = wrapper.getBoundingClientRect();
+                
+                if (e.type === "touchstart") {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                } else {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                }
+                
+                initialX = rect.left;
+                initialY = rect.top;
+                
+                header.style.cursor = 'grabbing';
+                panel.style.cursor = 'grabbing';
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                
+                let currentX, currentY;
+                if (e.type === "touchmove") {
+                    currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
+                } else {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+                }
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                
+                let newX = initialX + deltaX;
+                let newY = initialY + deltaY;
+                
+                // Constrain to viewport
+                const maxX = window.innerWidth - wrapper.offsetWidth;
+                const maxY = window.innerHeight - wrapper.offsetHeight;
+                
+                newX = Math.max(0, Math.min(newX, maxX));
+                newY = Math.max(0, Math.min(newY, maxY));
+                
+                wrapper.style.left = newX + 'px';
+                wrapper.style.top = newY + 'px';
+                wrapper.style.right = 'auto';
+                wrapper.style.bottom = 'auto';
+            }
+            
+            function dragEnd(e) {
+                if (isDragging) {
+                    isDragging = false;
+                    header.style.cursor = 'move';
+                    panel.style.cursor = 'move';
+                }
+            }
+        }
+
+        // Update system information
+        async function updateSystemInfo() {
+            while (true) {
+                try {
+                    const response = await fetch('/system_info');
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.cpu !== undefined) {
+                            document.getElementById("cpu-usage").innerText = `${data.cpu}%`;
+                        }
+                        
+                        if (data.memory !== undefined) {
+                            document.getElementById("memory-usage").innerText = `${data.memory}%`;
+                        }
+                        
+                        if (data.temperature !== undefined) {
+                            document.getElementById("temperature").innerText = `${data.temperature.toFixed(1)}°C`;
+                        } else {
+                            document.getElementById("temperature").innerText = "N/A";
+                        }
+                        
+                        // Battery info (if available)
+                        if (data.battery !== undefined && data.battery !== null) {
+                            document.getElementById("battery").innerText = `${data.battery}%`;
+                        } else {
+                            document.getElementById("battery").innerText = "N/A";
+                        }
+                        
+                        // TPU info (Coral TPU status) - detected at startup
+                        if (data.tpu !== undefined) {
+                            document.getElementById("tpi-info").innerText = data.tpu;
+                        } else {
+                            document.getElementById("tpi-info").innerText = "None";
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching system info:", error);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Update every 2 seconds
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize joystick
+            initJoystick();
+            
+            // Load available models
+            loadAvailableModels();
+            
+            // Make settings panel draggable
+            makeDraggable();
+            
+            // Start updating system info (includes TPU detection)
+            updateSystemInfo();
+            
+            // Prevent default touch behavior to avoid scrolling while controlling
+            const touchElements = document.querySelectorAll('.joystick-container');
+            touchElements.forEach(element => {
+                element.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                });
+                element.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                });
+                element.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

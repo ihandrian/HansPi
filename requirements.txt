@@ -1,0 +1,32 @@
+# HansPi - Python Dependencies
+# Install these packages using pip after installing system dependencies
+
+# Web framework for control panel
+Flask>=2.0.0
+
+# Computer vision for camera streaming and image processing
+opencv-python>=4.5.0
+
+# Numerical computing (required by OpenCV and other libraries)
+numpy>=1.21.0
+
+# System monitoring (CPU, memory, temperature)
+psutil>=5.8.0
+
+# HTTP library for downloading AI models
+requests>=2.25.0
+
+# Person detection (optional - will fall back to OpenCV HOG if not available)
+# For Raspberry Pi, install tflite_runtime:
+# For Pi 5 (64-bit): pip install https://github.com/google-coral/pycoral/releases/download/v2.0.0/tflite_runtime-2.14.0-cp311-cp311-linux_aarch64.whl
+# Or use full TensorFlow: pip install tensorflow
+# tflite-runtime  # Uncomment and specify version if installing via pip
+# tensorflow      # Alternative to tflite-runtime if you need full TensorFlow
+
+# Optional: Coral TPU support (for Edge TPU acceleration)
+# pycoral        # Uncomment if using Coral TPU
+
+# Note: gpiozero and lgpio are installed via apt (system packages)
+# They are not available via pip for Raspberry Pi 5 compatibility
+# See README.md for installation instructions
+

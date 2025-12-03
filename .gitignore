@@ -1,0 +1,35 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Log files
+*.log
+robot.log
+
+# Virtual environment
+venv/
+env/
+PiRobot/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files (too large for git)
+models/*.weights
+models/*.tflite
+models/*.pb
+
+# Compiled files
+*.egg-info/
+dist/
+build/
+
