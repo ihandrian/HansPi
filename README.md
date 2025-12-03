@@ -146,10 +146,12 @@ HansPi/
 ├── autonav.py                # Autonomous navigation module
 ├── requirements.txt          # Python dependencies
 ├── README.md                 # This file
+├── .gitignore                # Git ignore file (excludes cache/logs)
 ├── templates/
-│   └── index.html            # Web interface
+│   ├── index.html            # Web interface HTML
+│   └── style.css             # Web interface styles
 ├── models/                   # (created automatically - AI models stored here)
-└── robot.log                 # (created automatically)
+└── robot.log                 # (created automatically - excluded from git)
 ```
 
 ### Step 7: Connect Your Hardware
@@ -263,6 +265,13 @@ sudo apt install python3-gpiozero python3-lgpio python3-rpi-lgpio
 - Ensure you're using BCM GPIO numbering (not physical pin numbers)
 - Test with low speed first (20-30%)
 
+### Problem: Motors spinning on startup
+**Solution:**
+- ✅ **Fixed in latest version**: Motors are now properly initialized with enable pin set to 0 before direction pins
+- The motor controller ensures motors are disabled during initialization
+- If you experience this issue, make sure you're using the latest code from the repository
+- Motors should remain stopped when the program starts
+
 ### Problem: "Module not found" errors
 **Solution:** 
 ```bash
@@ -294,6 +303,7 @@ pip install -r requirements.txt
 ## 📋 Features
 
 - ✅ **Motor Control**: Forward, backward, left, right, and stop via joystick
+- ✅ **Safe Motor Initialization**: Motors are properly disabled on startup (prevents unintended spinning)
 - ✅ **PWM Speed Control**: Adjustable motor speed (0-100%)
 - ✅ **Camera Streaming**: Real-time fullscreen video feed
 - ✅ **Multi-Camera Support**: Switch between multiple cameras
@@ -366,6 +376,7 @@ The system uses MobileNet SSD by default (faster). To use YOLOv3 (more accurate)
 5. **Safe shutdown**: Press `Ctrl+C` to stop the robot controller safely
 6. **Person detection**: Works best in good lighting conditions
 7. **Following mode**: Start with low follow speed (30-40%) for safety
+8. **Motor safety**: Motors are automatically disabled on startup - they won't spin until you control them
 
 ## 📦 Dependencies Summary
 
